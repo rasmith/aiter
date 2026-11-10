@@ -122,6 +122,10 @@ _CONFIG_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
 _ARCH_OVERRIDE_RE = re.compile(r"[a-z][a-z0-9_]*")
 _ARCH_SAFE_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.+:-]*")
 
+# Architectures that read another architecture's config tree, matching
+# jit/utils/build_targets.py. gfx1250-strict ships no tree of its own.
+_CONFIG_ARCH_ALIAS = {"gfx1250-strict": "gfx1250"}
+
 _CU_NUM = None  # the device's CU count, read once per process
 _CU_NUM_READ = False
 
@@ -190,7 +194,9 @@ def resolve_config_dir(
         arch: overrides the running architecture (``arch_info.get_arch()``)
             -- for loaders that retry under another arch when the running one
             ships no tuned configs (e.g. MHC's documented gfx942 fallback).
-            Must match ``[a-z][a-z0-9_]*`` when given.
+            Must match ``[a-z][a-z0-9_]*`` when given, after
+            ``_CONFIG_ARCH_ALIAS`` (``gfx1250-strict`` -> ``gfx1250``), which
+            also applies to the running architecture.
         cu_num: the CU count whose ``<arch>/<cu_num>cu/`` tree is returned
             when it has a ``DEFAULT.json``. Default ``DEVICE_CU_NUM``: this
             device's count (``get_config_cu_num()``). ``None``: the plain
@@ -232,6 +238,8 @@ def resolve_config_dir(
     assert (
         backend in _VALID_BACKENDS
     ), f"unknown backend {backend!r}; expected one of {_VALID_BACKENDS}"
+    if isinstance(arch, str):
+        arch = _CONFIG_ARCH_ALIAS.get(arch, arch)
     assert arch is None or (
         isinstance(arch, str) and _ARCH_OVERRIDE_RE.fullmatch(arch)
     ), f"arch override must match [a-z][a-z0-9_]* (e.g. 'gfx942'), got {arch!r}"
@@ -241,6 +249,7 @@ def resolve_config_dir(
         or (type(cu_num) is int and cu_num > 0)
     ), f"cu_num must be a positive int, got {cu_num!r}"
     dev = arch if arch is not None else arch_info.get_arch()
+    dev = _CONFIG_ARCH_ALIAS.get(dev, dev)
     assert isinstance(dev, str) and _ARCH_SAFE_RE.fullmatch(
         dev
     ), f"arch_info.get_arch() returned a path-unsafe architecture: {dev!r}"
