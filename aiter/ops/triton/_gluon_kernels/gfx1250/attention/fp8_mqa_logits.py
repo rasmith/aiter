@@ -182,7 +182,17 @@ def _mqa_dot(
         dtype=gl.float32,
         layout=layout,
     )
-    return gl.amd.gfx1250.wmma(mfma_q, mfma_k, acc)
+    # HEAD_SIZE > 64 selects the 16x16x128 layout, where plain fp8 WMMA is
+    # restricted on gfx1250-strict; scaled WMMA with unit scales is equivalent.
+    if mfma_q.shape[1] > 64:
+        gl.static_assert(mfma_q.dtype == gl.float8e4nv)
+        gl.static_assert(mfma_k.dtype == gl.float8e4nv)
+        acc = gl.amd.gfx1250.wmma_scaled(
+            mfma_q, None, "e4m3", mfma_k, None, "e4m3", acc
+        )
+    else:
+        acc = gl.amd.gfx1250.wmma(mfma_q, mfma_k, acc)
+    return acc
 
 
 @gluon.jit

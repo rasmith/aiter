@@ -280,7 +280,9 @@ def _gemm_a8w8_blockscale_bandwidth_bound_kernel(
             cur_b_scale = smem_scale_b.load(layout=gl.SliceLayout(0, wmma_layout))
 
         # wmma
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         if SCALAR_B_SCALE:
             acc += res * cur_a_scale[:, None] * cur_b_scale
         else:
@@ -371,7 +373,9 @@ def _gemm_a8w8_blockscale_bandwidth_bound_kernel(
             .load(layout=dot_b_layout)
         )
         # wmma
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         if SCALAR_B_SCALE:
             acc += res * cur_a_scale[:, None] * cur_b_scale
         else:
@@ -391,7 +395,7 @@ def _gemm_a8w8_blockscale_bandwidth_bound_kernel(
             cur_b_scale = smem_scale_b.load(layout=gl.SliceLayout(0, wmma_layout))
 
     # wmma remaining tile
-    res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+    res = gl.amd.gfx1250.wmma_scaled(cur_a, None, "e4m3", cur_b, None, "e4m3", zeros)
     if SCALAR_B_SCALE:
         acc += res * cur_a_scale[:, None] * cur_b_scale
     else:
@@ -639,7 +643,9 @@ def _gemm_a8w8_blockscale_compute_bound_kernel(
         if not SCALAR_B_SCALE:
             cur_b_scale = smem_scale_b.load(layout=gl.SliceLayout(0, wmma_layout))
 
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         if SCALAR_B_SCALE:
             acc += res * cur_a_scale[:, None] * cur_b_scale
         else:
@@ -727,7 +733,9 @@ def _gemm_a8w8_blockscale_compute_bound_kernel(
             .load(layout=dot_b_layout)
         )
 
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         if SCALAR_B_SCALE:
             acc += res * cur_a_scale[:, None] * cur_b_scale
         else:
@@ -746,7 +754,7 @@ def _gemm_a8w8_blockscale_compute_bound_kernel(
             cur_b_scale = smem_scale_b.load(layout=gl.SliceLayout(0, wmma_layout))
 
     # wmma remaining tile
-    res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+    res = gl.amd.gfx1250.wmma_scaled(cur_a, None, "e4m3", cur_b, None, "e4m3", zeros)
     if SCALAR_B_SCALE:
         acc += res * cur_a_scale[:, None] * cur_b_scale
     else:
@@ -1145,7 +1153,9 @@ def _gemm_a8w8_blockscale_preshuffle_bandwidth_bound_kernel(
         else:
             cur_ab_scale = cur_a_scale[:, None] * cur_b_scale[None, :]
 
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         acc += res * cur_ab_scale
 
         if SCALAR_B_SCALE:
@@ -1243,7 +1253,9 @@ def _gemm_a8w8_blockscale_preshuffle_bandwidth_bound_kernel(
             cur_ab_scale = cur_a_scale[:, None] * cur_b_scale
         else:
             cur_ab_scale = cur_a_scale[:, None] * cur_b_scale[None, :]
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         acc += res * cur_ab_scale
 
         if SCALAR_B_SCALE:
@@ -1293,7 +1305,7 @@ def _gemm_a8w8_blockscale_preshuffle_bandwidth_bound_kernel(
         cur_ab_scale = cur_a_scale[:, None] * cur_b_scale
     else:
         cur_ab_scale = cur_a_scale[:, None] * cur_b_scale[None, :]
-    res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+    res = gl.amd.gfx1250.wmma_scaled(cur_a, None, "e4m3", cur_b, None, "e4m3", zeros)
     acc += res * cur_ab_scale
 
     # Store — offset c_ptr by pid_k * stride_ck for split-K
@@ -1623,7 +1635,9 @@ def _gemm_a8w8_blockscale_preshuffle_compute_bound_kernel(
             cur_ab_scale = cur_a_scale[:, None] * cur_b_scale[None, :]
 
         # -- WMMA for current tile (operands already in registers) --
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         acc += res * cur_ab_scale
 
         # -- Issue TDM load for tile (num_loads) --
@@ -1737,7 +1751,9 @@ def _gemm_a8w8_blockscale_preshuffle_compute_bound_kernel(
         ).load(layout=dot_b_layout)
 
         # WMMA for current tile
-        res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+        res = gl.amd.gfx1250.wmma_scaled(
+            cur_a, None, "e4m3", cur_b, None, "e4m3", zeros
+        )
         acc += res * cur_ab_scale
 
         cur_a = next_a
@@ -1779,7 +1795,7 @@ def _gemm_a8w8_blockscale_preshuffle_compute_bound_kernel(
         cur_ab_scale = cur_a_scale[:, None] * cur_b_scale
     else:
         cur_ab_scale = cur_a_scale[:, None] * cur_b_scale[None, :]
-    res = gl.amd.gfx1250.wmma(cur_a, cur_b, zeros)
+    res = gl.amd.gfx1250.wmma_scaled(cur_a, None, "e4m3", cur_b, None, "e4m3", zeros)
     acc += res * cur_ab_scale
 
     # Store — offset c_ptr by pid_k * stride_ck for split-K
